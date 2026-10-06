@@ -1,0 +1,45 @@
+name: pygbag_build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.py'
+      - '**.spec'
+      - '**.ini'
+      - 'requirements.txt'
+      - 'setup.py'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-pygbag:
+    name: Build for Emscripten pygbag runtime
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Checkout
+      run: |
+            python -m pip install pygbag
+            if [ -f main.py ]; then ENTRY="main.py"; else ENTRY=$(ls *.py | head -n 1); fi
+            python -m pygbag --build $GITHUB_WORKSPACE/$ENTRY
+
+    - name : "Upload to GitHub pages branch gh-pages"
+      uses: JamesIves/github-pages-deploy-action@4.1.7
+      with:
+        branch: gh-pages
+        folder: build/web
+
+    - name: Setup Butler
+      uses: remarkablegames/setup-butler@v1
+
+    - name: Publish HTML to itch.io via Butler
+      env:
+        BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      run: |
+        butler push build/web ShivamKR12/wormy:html --userversion web-v1.0.${{ github.run_number }}

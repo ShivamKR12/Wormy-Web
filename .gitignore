@@ -1,0 +1,34 @@
+# PyInstaller build artifacts
+build/
+dist/
+# wormy.spec
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS Files
+Thumbs.db
+.DS_Store
+*.log
+
+# Local development
+.env
+local_settings.py
