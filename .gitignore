@@ -1,34 +1,32 @@
-# PyInstaller build artifacts
-build/
-dist/
-# wormy.spec
-
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-*.egg-info/
-dist/
-build/
 
-# IDE and Editor
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging / build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# PyInstaller / Desktop specs
+*.spec
+*.ico
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
-.DS_Store
 
-# OS Files
-Thumbs.db
-.DS_Store
+# Temporary files & logs
 *.log
-
-# Local development
-.env
-local_settings.py
+temp.txt

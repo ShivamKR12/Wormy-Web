@@ -1,5 +1,5 @@
-import random, pygame, sys
-from pygame.locals import *
+import random, sys, asyncio
+import pygame
 
 FPS = 15
 WINDOWWIDTH = 640
@@ -24,7 +24,23 @@ LEFT = 'left'
 RIGHT = 'right'
 HEAD = 0
 
-def main():
+# Key and Event Constants from pygame (avoids 'direct constants' which pygbag misidentifies)
+QUIT = pygame.QUIT
+KEYDOWN = pygame.KEYDOWN
+KEYUP = pygame.KEYUP
+K_LEFT = pygame.K_LEFT
+K_RIGHT = pygame.K_RIGHT
+K_UP = pygame.K_UP
+K_DOWN = pygame.K_DOWN
+K_a = pygame.K_a
+K_d = pygame.K_d
+K_w = pygame.K_w
+K_s = pygame.K_s
+K_ESCAPE = pygame.K_ESCAPE
+MOUSEBUTTONDOWN = pygame.MOUSEBUTTONDOWN
+MOUSEBUTTONUP = pygame.MOUSEBUTTONUP
+
+async def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
 
     pygame.init()
@@ -32,15 +48,13 @@ def main():
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     BASICFONT = pygame.font.Font('freesansbold.ttf', 18)
     pygame.display.set_caption('Wormy')
-    # icon = pygame.image.load('wormy.png')
-    # pygame.display.set_icon(icon)
 
-    showStartScreen()
+    await showStartScreen()
     while True:
-        runGame()
-        showGameOverScreen()
+        await runGame()
+        await showGameOverScreen()
 
-def runGame():
+async def runGame():
     startx = random.randint(5, CELLWIDTH - 6)
     starty = random.randint(5, CELLHEIGHT - 6)
     wormCoords = [{'x': startx, 'y': starty},
@@ -49,6 +63,7 @@ def runGame():
     direction = RIGHT
 
     apple = getRandomLocation()
+    touch_start = None
 
     while True:
         for event in pygame.event.get():
@@ -65,6 +80,22 @@ def runGame():
                     direction = DOWN
                 elif event.key == K_ESCAPE:
                     terminate()
+            elif event.type == MOUSEBUTTONDOWN:
+                touch_start = event.pos
+            elif event.type == MOUSEBUTTONUP and touch_start:
+                dx = event.pos[0] - touch_start[0]
+                dy = event.pos[1] - touch_start[1]
+                touch_start = None
+                if abs(dx) > abs(dy) and abs(dx) > 20:
+                    if dx > 0 and direction != LEFT:
+                        direction = RIGHT
+                    elif dx < 0 and direction != RIGHT:
+                        direction = LEFT
+                elif abs(dy) > abs(dx) and abs(dy) > 20:
+                    if dy > 0 and direction != UP:
+                        direction = DOWN
+                    elif dy < 0 and direction != DOWN:
+                        direction = UP
 
         if wormCoords[HEAD]['x'] == -1 or wormCoords[HEAD]['x'] == CELLWIDTH or wormCoords[HEAD]['y'] == -1 or wormCoords[HEAD]['y'] == CELLHEIGHT:
             return
@@ -94,25 +125,27 @@ def runGame():
         drawScore(len(wormCoords) - 3)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
+        await asyncio.sleep(0)
 
 def drawPressKeyMsg():
-    pressKeySurf = BASICFONT.render('Press a key to play.', True, DARKGRAY)
+    pressKeySurf = BASICFONT.render('Press a key or tap to play.', True, DARKGRAY)
     pressKeyRect = pressKeySurf.get_rect()
-    pressKeyRect.topleft = (WINDOWWIDTH - 200, WINDOWHEIGHT - 30)
+    pressKeyRect.topleft = (WINDOWWIDTH - 230, WINDOWHEIGHT - 30)
     DISPLAYSURF.blit(pressKeySurf, pressKeyRect)
 
 def checkForKeyPress():
-    if len(pygame.event.get(QUIT)) > 0:
-        terminate()
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            terminate()
+        elif event.type == KEYUP:
+            if event.key == K_ESCAPE:
+                terminate()
+            return event.key
+        elif event.type == MOUSEBUTTONUP:
+            return True
+    return None
 
-    keyUpEvents = pygame.event.get(KEYUP)
-    if len(keyUpEvents) == 0:
-        return None
-    if keyUpEvents[0].key == K_ESCAPE:
-        terminate()
-    return keyUpEvents[0].key
-
-def showStartScreen():
+async def showStartScreen():
     titleFont = pygame.font.Font('freesansbold.ttf', 100)
     titleSurf1 = titleFont.render('Wormy!', True, WHITE, DARKGREEN)
     titleSurf2 = titleFont.render('Wormy!', True, GREEN)
@@ -137,6 +170,7 @@ def showStartScreen():
             return
         pygame.display.update()
         FPSCLOCK.tick(FPS)
+        await asyncio.sleep(0)
         degrees1 += 3
         degrees2 += 7
 
@@ -147,7 +181,7 @@ def terminate():
 def getRandomLocation():
     return {'x': random.randint(0, CELLWIDTH - 1), 'y': random.randint(0, CELLHEIGHT - 1)}
 
-def showGameOverScreen():
+async def showGameOverScreen():
     gameOverFont = pygame.font.Font('freesansbold.ttf', 150)
     gameSurf = gameOverFont.render('Game', True, WHITE)
     overSurf = gameOverFont.render('Over', True, WHITE)
@@ -160,13 +194,16 @@ def showGameOverScreen():
     DISPLAYSURF.blit(overSurf, overRect)
     drawPressKeyMsg()
     pygame.display.update()
-    pygame.time.wait(500)
+    await asyncio.sleep(0.5)
     checkForKeyPress() # clear out any key presses in the event queue
 
     while True:
         if checkForKeyPress():
             pygame.event.get() # clear event queue
             return
+        pygame.display.update()
+        FPSCLOCK.tick(FPS)
+        await asyncio.sleep(0)
 
 def drawScore(score):
     scoreSurf = BASICFONT.render('Score: %s' % (score), True, WHITE)
@@ -196,4 +233,4 @@ def drawGrid():
         pygame.draw.line(DISPLAYSURF, DARKGRAY, (0, y), (WINDOWWIDTH, y))
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())
