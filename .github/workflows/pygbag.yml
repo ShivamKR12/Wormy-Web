@@ -7,6 +7,7 @@ on:
     paths:
       - '**.py'
       - '**.ini'
+      - 'default.tmpl'
       - 'requirements.txt'
       - '.github/workflows/*.yml'
   workflow_dispatch:
